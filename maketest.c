@@ -26,7 +26,31 @@ int main (int argc, char** argv)
 	fp = fopen(outfile,"wb");
 
 	c = 'A';
-	n = 6;
+	n = 256;
+	for (i = 0; i < n; i++)
+	{
+		fwrite(&c,sizeof(char),1,fp);
+	}
+	c = 'B';
+	n = 10;
+	for (i = 0; i < n; i++)
+	{
+		fwrite(&c,sizeof(char),1,fp);
+	}
+	c = 'X';
+	n = 1;
+	for (i = 0; i < n; i++)
+	{
+		fwrite(&c,sizeof(char),1,fp);
+	}
+	c = 'Z';
+	n = 1;
+	for (i = 0; i < n; i++)
+	{
+		fwrite(&c,sizeof(char),1,fp);
+	}
+	c = 'D';
+	n = 1;
 	for (i = 0; i < n; i++)
 	{
 		fwrite(&c,sizeof(char),1,fp);
