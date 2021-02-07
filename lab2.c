@@ -16,6 +16,7 @@ void read_file(char* filename, unsigned char** data, long int *filesize);
 void write_file(char* filename, unsigned char* data, long int filesize);
 void rle_a(unsigned char* data, unsigned char **archive, long int filesize, long int *archivesize);
 void rle_x(unsigned char** data, unsigned char* archive, long int *filesize, long int archivesize);
+void print_stats(char* infile, char* outfile, long int filesize, long int archivesize);
 void compress(char* file);
 void decompress(char* file);
 
@@ -69,7 +70,36 @@ void rle_a(unsigned char* data, unsigned char **archive, long int filesize, long
 
 void rle_x(unsigned char** data, unsigned char* archive, long int *filesize, long int archivesize)
 {
+	int i, j;
+	unsigned char count = 0;
+	unsigned char val;
 
+
+	// determine filesize of decompressed values
+	*filesize = 0;
+	for (i = 0; i < archivesize; i++)
+	{
+		if ((i % 2) == 0) *filesize += archive[i];
+	}
+
+	*data = (unsigned char *)malloc((*filesize) * sizeof(unsigned char));
+
+	debug("Archive size: %ld\n",archivesize);
+	debug("File size: %ld\n",*filesize);
+
+	for (i = 0,j = 0; i < archivesize - 1; i += 2)
+	{
+		count = archive[i];
+		val = archive[i+1];
+		while (count > 0)
+		{
+			(*data)[j] = val;
+			j++;
+			count--;
+		}
+	}
+
+	return;
 }
 
 void decompress(char* file)
@@ -79,11 +109,11 @@ void decompress(char* file)
 	int len;
 	char outfile[80];
 
-	read_file(file, &data, &filesize);
+	read_file(file, &archive, &archivesize);
 
 	// compress with RLE
 	printf("Decompressing file... %s\n", file);
-	//rle_x(&data, archive, &filesize, archivesize);
+	rle_x(&data, archive, &filesize, archivesize);
 
 	// append file with *.a file extension
 	strcpy(outfile,file);
@@ -94,6 +124,11 @@ void decompress(char* file)
 	}
 
 	write_file(outfile, data, filesize);
+
+	free(archive);
+	free(data);
+
+	print_stats(file, outfile, filesize, archivesize);
 
 	return;
 }
@@ -115,6 +150,22 @@ void compress(char* file)
 	strcat(outfile,".a");
 
 	write_file(outfile, archive, archivesize);
+
+	free(archive);
+	free(data);
+
+	print_stats(file, outfile, filesize, archivesize);
+
+	return;
+}
+
+void print_stats(char* infile, char* outfile, long int filesize, long int archivesize)
+{
+	printf("\nOriginal file: \t\t%s\n", infile);
+	printf("Compressed file: \t%s\n", outfile);
+	printf("Original size: \t\t%ld\n", filesize);
+	printf("Compressed size: \t%ld\n", archivesize);
+	printf("Compression ratio: \t%0.4f\n", (float)filesize/archivesize);
 
 	return;
 }
