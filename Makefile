@@ -1,10 +1,10 @@
 CC=gcc
-CFLAGS=-Wall -g
+CFLAGS=-Wall -g -DDEBUG
 LDFLAGS=
 
 all:
-	test
-	lab
+	make lab
+	make test
 
 lab:
 	$(CC) $(CFLAGS) lab2.c -o rle
@@ -15,4 +15,4 @@ clean:
 	rm -rf test
 	rm -rf rle
 	rm -rf *.bin
-	rm -rf *.rle
+	rm -rf *.a
