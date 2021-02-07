@@ -55,4 +55,5 @@ dkms.conf
 
 # input/output files
 *.bin
-*.rle
+*.a
+*.ppm
