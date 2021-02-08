@@ -11,7 +11,7 @@
 #define debug(fmt, ...)
 #endif
 
-#define WINDOW 3
+#define WINDOW 4
 #define MARKER 0
 
 #define TRUE 1
@@ -49,7 +49,7 @@ void rle_markers_a(unsigned char* data, unsigned char **archive, long int filesi
 	unsigned char count = 0;
 	unsigned char curr, next;
 
-	*archive = (unsigned char *)malloc(sizeof(unsigned char) * filesize);
+	*archive = (unsigned char *)malloc(sizeof(unsigned char) * 2 * filesize);
 
 	for (i = 0, j = 0; i < filesize; i++, j += 2)
 	{
@@ -313,8 +313,8 @@ void compress(char* file)
 
 	write_file(outfile, archive, archivesize);
 
-	free(archive);
 	free(data);
+	free(archive);
 
 	print_stats(file, outfile, filesize, archivesize);
 
