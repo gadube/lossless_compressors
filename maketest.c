@@ -26,13 +26,13 @@ int main (int argc, char** argv)
 	fp = fopen(outfile,"wb");
 
 	c = 'A';
-	n = 256;
+	n = 5;
 	for (i = 0; i < n; i++)
 	{
 		fwrite(&c,sizeof(char),1,fp);
 	}
 	c = 'B';
-	n = 10;
+	n = 1;
 	for (i = 0; i < n; i++)
 	{
 		fwrite(&c,sizeof(char),1,fp);
@@ -43,7 +43,19 @@ int main (int argc, char** argv)
 	{
 		fwrite(&c,sizeof(char),1,fp);
 	}
-	c = 'Z';
+	c = 0;
+	n = 10;
+	for (i = 0; i < n; i++)
+	{
+		fwrite(&c,sizeof(char),1,fp);
+	}
+	c = 'B';
+	n = 1;
+	for (i = 0; i < n; i++)
+	{
+		fwrite(&c,sizeof(char),1,fp);
+	}
+	c = 'X';
 	n = 1;
 	for (i = 0; i < n; i++)
 	{
@@ -51,6 +63,24 @@ int main (int argc, char** argv)
 	}
 	c = 'D';
 	n = 1;
+	for (i = 0; i < n; i++)
+	{
+		fwrite(&c,sizeof(char),1,fp);
+	}
+	c = 'B';
+	n = 1;
+	for (i = 0; i < n; i++)
+	{
+		fwrite(&c,sizeof(char),1,fp);
+	}
+	c = 'X';
+	n = 1;
+	for (i = 0; i < n; i++)
+	{
+		fwrite(&c,sizeof(char),1,fp);
+	}
+	c = 'J';
+	n = 10;
 	for (i = 0; i < n; i++)
 	{
 		fwrite(&c,sizeof(char),1,fp);
