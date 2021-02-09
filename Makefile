@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-Wall -g -DDEBUG -DMARKERS
+CFLAGS=-Wall -g -DMARKERS
 LDFLAGS=
 
 all:
