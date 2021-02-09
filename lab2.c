@@ -98,6 +98,11 @@ void rle_markers_a(unsigned char* data, unsigned char **archive, long int filesi
 				if (data[i] == 0)
 				{
 					(*archive)[k] = MARKER;
+					if ( k % 2 != 0)
+					{
+						(*archive)[k+1] = 'x';
+						k++;
+					}
 					(*archive)[k + 1] = 1;
 					(*archive)[k + 2] = data[i];
 					j += 2;
