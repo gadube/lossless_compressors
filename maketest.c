@@ -6,7 +6,8 @@ int main (int argc, char** argv)
 {
 	char outfile[80];
 	FILE* fp;
-	int c, n, i;
+	int n, i;
+	unsigned char c;
 
 	// check input args and give output file a name
 	if (argc > 2)
@@ -26,64 +27,22 @@ int main (int argc, char** argv)
 	fp = fopen(outfile,"wb");
 
 	c = 'A';
+	n = 256;
+	for (i = 0; i < n; i++)
+	{
+		fwrite(&c,sizeof(char),1,fp);
+	}
+	c = '\n';
+	n = 2;
+	for (i = 0; i < n; i++)
+	{
+		fwrite(&c,sizeof(char),1,fp);
+	}
+	char w[20] = "This is a text file.";
 	n = 5;
 	for (i = 0; i < n; i++)
 	{
-		fwrite(&c,sizeof(char),1,fp);
-	}
-	c = 'B';
-	n = 1;
-	for (i = 0; i < n; i++)
-	{
-		fwrite(&c,sizeof(char),1,fp);
-	}
-	c = 'X';
-	n = 1;
-	for (i = 0; i < n; i++)
-	{
-		fwrite(&c,sizeof(char),1,fp);
-	}
-	c = 0;
-	n = 10;
-	for (i = 0; i < n; i++)
-	{
-		fwrite(&c,sizeof(char),1,fp);
-	}
-	c = 'B';
-	n = 1;
-	for (i = 0; i < n; i++)
-	{
-		fwrite(&c,sizeof(char),1,fp);
-	}
-	c = 'X';
-	n = 1;
-	for (i = 0; i < n; i++)
-	{
-		fwrite(&c,sizeof(char),1,fp);
-	}
-	c = 'D';
-	n = 1;
-	for (i = 0; i < n; i++)
-	{
-		fwrite(&c,sizeof(char),1,fp);
-	}
-	c = 'B';
-	n = 1;
-	for (i = 0; i < n; i++)
-	{
-		fwrite(&c,sizeof(char),1,fp);
-	}
-	c = 'X';
-	n = 1;
-	for (i = 0; i < n; i++)
-	{
-		fwrite(&c,sizeof(char),1,fp);
-	}
-	c = 'J';
-	n = 10;
-	for (i = 0; i < n; i++)
-	{
-		fwrite(&c,sizeof(char),1,fp);
+		fwrite(&w,sizeof(char),20,fp);
 	}
 
 	fclose(fp);
