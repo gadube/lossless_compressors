@@ -37,6 +37,8 @@
 *.hex
 test
 rle
+lzw
+huffman
 
 # Debug files
 *.dSYM/
