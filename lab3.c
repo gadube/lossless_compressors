@@ -23,6 +23,12 @@ typedef struct table
 	int sym_length;
 }table_t;
 
+typedef struct prev
+{
+	unsigned char* A;
+	int len;
+}prev_t;
+
 void parse_input(int argc, char** argv, char* filename, char* compress, char* decompress);
 void read_file(char* filename, unsigned char** data, long int *filesize);
 void write_file(char* filename, unsigned char* data, long int filesize);
@@ -59,11 +65,20 @@ char find_val(table_t table, unsigned short int length, unsigned char* value, un
 	return 0;
 }
 
-void array_cat(unsigned char **A, unsigned char c, int *len)
+void arraychar_cat(unsigned char **A, unsigned char c, int *len)
 {
 	(*len)++;
 	*A = realloc(*A, *len * sizeof(unsigned char));
 	(*A)[*len - 1] = c;
+	return;
+}
+
+void array_cat(unsigned char **A, unsigned char *B, int *lenA, int lenB)
+{
+	for (int i = 0; i < lenB; i++)
+	{
+		arraychar_cat(A,B[i],lenA);
+	}
 	return;
 }
 
@@ -116,18 +131,36 @@ void print_table(table_t* table,unsigned short int from, unsigned short int to, 
 	return;
 }
 
+void init_prev(prev_t *P)
+{
+	P->A = (unsigned char *)malloc(sizeof(unsigned char));
+	P->len = 1;
+	return;
+}
+
 void lzw_a(unsigned char* data, unsigned char **archive, long int filesize, long int *archivesize)
 {
 	table_t* table = NULL;
+	prev_t p;
 	unsigned short int tablesize = 0;
 	unsigned short int keyval;
-	unsigned char *p, c;
+	unsigned char c;
+
 
 	*archive = (unsigned char *)malloc(filesize * 2 * sizeof(unsigned char));
 
 	init_table(&table, &tablesize);
-	print_table(table, 255, 300, tablesize);
+	init_prev(&prev);
+	p = (unsigned char *)malloc(sizeof(unsigned char) * 8);
+	for (int i = 0; i < 8; i++)
+	{
+		p[i] = 'A';
+	}
+	array_cat(&(table[129].val),p,&(table[129].sym_length),8);
 
+	print_table(table, 128, 130, tablesize);
+
+/*
 	p = data[0];
 	for (int i = 0; i < filesize; i++)
 	{
@@ -140,6 +173,7 @@ void lzw_a(unsigned char* data, unsigned char **archive, long int filesize, long
 		}
 
 	}
+	*/
 
 	destroy_table(&table, tablesize);
 
