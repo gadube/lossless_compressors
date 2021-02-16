@@ -31,9 +31,11 @@ typedef struct prev
 
 void parse_input(int argc, char** argv, char* filename, char* compress, char* decompress);
 void read_file(char* filename, unsigned char** data, long int *filesize);
+void read_lzw_file(char* filename, unsigned short int** data, long int *filesize);
 void write_file(char* filename, unsigned char* data, long int filesize);
-void lzw_a(unsigned char* data, unsigned char **archive, long int filesize, long int *archivesize);
-void lzw_x(unsigned char** data, unsigned char* archive, long int *filesize, long int archivesize);
+void write_lzw_file(char* filename, unsigned short int* data, long int filesize);
+void lzw_a(unsigned char* data, unsigned short int **archive, long int filesize, long int *archivesize);
+void lzw_x(unsigned char** data, unsigned short int* archive, long int *filesize, long int archivesize);
 void print_stats(char* infile, char* outfile, long int filesize, long int archivesize);
 void init_table(table_t** table, unsigned short int* tablesize);
 void print_table(table_t* table,unsigned short int from, unsigned short int to, unsigned short int tablesize);
@@ -54,14 +56,27 @@ int main (int argc, char** argv)
 	return 0;
 }
 
-char find_val(table_t table, unsigned short int length, unsigned char* value, unsigned short int val_len, unsigned short int k)
+char find_val(table_t *table, unsigned short int length, unsigned char* value, unsigned short int val_len, unsigned short int *k)
 {
-	for (int i = 0; i < length; i++)
+	int i,j;
+
+	for (i = 0; i < length; i++)
 	{
-		for (int j = 0; j < val_len; j++)
+		if (table[i].sym_length == val_len)
 		{
+			for (j = 0; j < val_len; j++)
+			{
+				if (table[i].val[j] != value[j]) break;
+			}
+			if (val_len == j)
+			{
+				*k = table[i].key;
+				debug("Value found at key %d\n", *k);
+				return 1;
+			}
 		}
 	}
+	debug("Can't find that one!%c",'\n');
 	return 0;
 }
 
@@ -80,6 +95,27 @@ void array_cat(unsigned char **A, unsigned char *B, int *lenA, int lenB)
 		arraychar_cat(A,B[i],lenA);
 	}
 	return;
+}
+
+void array_replace(unsigned char **A, unsigned char *B, int *lenA, int lenB)
+{
+	*A = realloc(*A, sizeof(unsigned char) * lenB);
+	*lenA = lenB;
+	for (int i = 0; i < lenB; i++)
+	{
+		(*A)[i] = B[i];
+	}
+	return;
+}
+
+char add_to_table(table_t** table, prev_t pc, unsigned short int* tablesize)
+{
+	if (*tablesize >= ENTRIES) return 1;
+
+	array_replace(&((*table)[*tablesize].val), pc.A, &((*table)[*tablesize].sym_length), pc.len);
+	(*tablesize)++;
+
+	return 0;
 }
 
 void init_table(table_t** table, unsigned short int* tablesize)
@@ -119,6 +155,7 @@ void destroy_table(table_t** table, unsigned short int tablesize)
 void print_table(table_t* table,unsigned short int from, unsigned short int to, unsigned short int tablesize)
 {
 	assert(to <= tablesize && "TABLE IS NOT LARGE ENOUGH TO PRINT REQUESTED VALUES");
+	debug("Table Size: %d\n", tablesize);
 	for (int i = from; i < to; i++)
 	{
 		debug("Key: %d \tVal: ",table[i].key);
@@ -131,57 +168,83 @@ void print_table(table_t* table,unsigned short int from, unsigned short int to, 
 	return;
 }
 
-void init_prev(prev_t *P)
+void init_prev(prev_t *P,unsigned char firstdata)
 {
 	P->A = (unsigned char *)malloc(sizeof(unsigned char));
+	P->A[0] = firstdata;
 	P->len = 1;
 	return;
 }
 
-void lzw_a(unsigned char* data, unsigned char **archive, long int filesize, long int *archivesize)
+void print_prev(prev_t P)
 {
-	table_t* table = NULL;
-	prev_t p;
-	unsigned short int tablesize = 0;
-	unsigned short int keyval;
-	unsigned char c;
-
-
-	*archive = (unsigned char *)malloc(filesize * 2 * sizeof(unsigned char));
-
-	init_table(&table, &tablesize);
-	init_prev(&prev);
-	p = (unsigned char *)malloc(sizeof(unsigned char) * 8);
-	for (int i = 0; i < 8; i++)
+	debug("Previous Symbol Len: %d\n",P.len);
+	for (int i = 0; i < P.len; i++)
 	{
-		p[i] = 'A';
+		debug("%c ",P.A[i]);
 	}
-	array_cat(&(table[129].val),p,&(table[129].sym_length),8);
-
-	print_table(table, 128, 130, tablesize);
-
-/*
-	p = data[0];
-	for (int i = 0; i < filesize; i++)
-	{
-		c = data[i + 1];
-		if (find_val(table,&keyval))
-		{
-		}
-		else
-		{
-		}
-
-	}
-	*/
-
-	destroy_table(&table, tablesize);
-
-
+	debug("%c",'\n');
 	return;
 }
 
-void lzw_x(unsigned char** data, unsigned char* archive, long int *filesize, long int archivesize)
+void destroy_prev(prev_t *P)
+{
+	free(P->A);
+}
+
+void lzw_a(unsigned char* data, unsigned short int **archive, long int filesize, long int *archivesize)
+{
+	table_t* table = NULL;
+	prev_t p, pc;
+	unsigned short int tablesize = 0;
+	unsigned short int keyval;
+	int j = 0;
+	unsigned char c, found;
+
+	*archive = (unsigned short int *)malloc(filesize * 2 * sizeof(unsigned short int));
+
+	init_table(&table, &tablesize);
+	init_prev(&p, data[0]);
+	init_prev(&pc, data[0]);
+
+	for (int i = 0; i < filesize - 1; i++)
+	{
+		c = data[i + 1];
+		arraychar_cat(&(pc.A),c,&(pc.len));
+		found = find_val(table, tablesize, pc.A, pc.len, &keyval);
+		if (found)
+		{
+			array_replace(&(p.A),pc.A,&(p.len),pc.len);
+			//print_prev(p);
+			//print_prev(pc);
+		}
+		else
+		{
+			find_val(table, tablesize, p.A, p.len, &keyval);
+			(*archive)[j] = keyval; j++;
+			debug("%d ",keyval);
+			add_to_table(&table, pc, &tablesize);
+			p.len = 0;
+			array_replace(&(p.A), &c, &(p.len),1);
+			array_replace(&(pc.A),p.A,&(pc.len),p.len);
+			//print_prev(p);
+			//print_prev(pc);
+		}
+	}
+	find_val(table, tablesize, p.A, p.len, &keyval);
+	(*archive)[j] = keyval; j++;
+	*archivesize = j;
+	for (int i = 0; i < *archivesize; i++) printf("%d ", (*archive)[i]);
+	printf("\n");
+	print_table(table, 256, tablesize,tablesize);
+
+	destroy_table(&table, tablesize);
+	destroy_prev(&p);
+	destroy_prev(&pc);
+	return;
+}
+
+void lzw_x(unsigned char** data, unsigned short int* archive, long int *filesize, long int archivesize)
 {
 
 	return;
@@ -189,12 +252,13 @@ void lzw_x(unsigned char** data, unsigned char* archive, long int *filesize, lon
 
 void decompress(char* file)
 {
-	unsigned char* data, *archive;
+	unsigned char* data;
+	unsigned short int *archive;
 	long int filesize, archivesize;
 	int len;
 	char outfile[80];
 
-	read_file(file, &archive, &archivesize);
+	read_lzw_file(file, &archive, &archivesize);
 
 	// compress with RLE
 	printf("Decompressing file... %s\n", file);
@@ -221,13 +285,14 @@ void decompress(char* file)
 
 void compress(char* file)
 {
-	unsigned char* data, *archive;
+	unsigned char* data;
+	unsigned short int *archive;
 	long int filesize, archivesize;
 	char outfile[80];
 
 	read_file(file, &data, &filesize);
 
-	// compress with RLE
+	// compress with LZW
 	printf("Compressing file... %s\n", file);
 
 	lzw_a(data, &archive, filesize, &archivesize);
@@ -237,11 +302,12 @@ void compress(char* file)
 	strcat(outfile,".a");
 
 //	write_file(outfile, archive, archivesize);
+	write_lzw_file(outfile, archive, archivesize);
 
 	free(data);
 	free(archive);
 
-//	print_stats(file, outfile, filesize, archivesize);
+	print_stats(file, outfile, filesize, archivesize);
 
 	return;
 }
@@ -251,8 +317,8 @@ void print_stats(char* infile, char* outfile, long int filesize, long int archiv
 	printf("\nOriginal file: \t\t%s\n", infile);
 	printf("Compressed file: \t%s\n", outfile);
 	printf("Original size: \t\t%ld\n", filesize);
-	printf("Compressed size: \t%ld\n", archivesize);
-	printf("Compression ratio: \t%0.4f\n", (float)filesize/archivesize);
+	printf("Compressed size: \t%ld\n", archivesize * sizeof(unsigned short int));
+	printf("Compression ratio: \t%0.4f\n", (float)filesize/(archivesize* sizeof(unsigned short int)));
 
 	return;
 }
@@ -283,6 +349,32 @@ void read_file(char* filename, unsigned char** data, long int *filesize)
 	return;
 }
 
+void read_lzw_file(char* filename, unsigned short int** data, long int *filesize)
+{
+	FILE* fp = NULL;
+
+	fp = fopen(filename,"rb");
+	if (fp == NULL)
+	{
+		printf("Unable to open file %s\n", filename);
+		exit(0);
+	}
+
+	// find filesize and alloc mem
+	fseek(fp, 0, SEEK_END);
+	*filesize = (long int)ftell(fp);
+	fseek(fp, 0, SEEK_SET);
+
+	debug("Reading %ld bytes from %s\n", *filesize, filename);
+
+	// read data
+	*data = (unsigned short int *)malloc((*filesize) * sizeof(unsigned short int));
+	fread(*data, sizeof(unsigned short int), *filesize, fp);
+	fclose(fp);
+
+	return;
+}
+
 void write_file(char* filename, unsigned char* data, long int filesize)
 {
 	FILE* fp = NULL;
@@ -297,6 +389,25 @@ void write_file(char* filename, unsigned char* data, long int filesize)
 	debug("Writing %ld bytes to %s\n", filesize, filename);
 
 	fwrite(data, sizeof(unsigned char), filesize, fp);
+	fclose(fp);
+
+	return;
+}
+
+void write_lzw_file(char* filename, unsigned short int* data, long int filesize)
+{
+	FILE* fp = NULL;
+
+	fp = fopen(filename, "wb");
+	if (fp == NULL)
+	{
+		printf("Unable to open file %s\n", filename);
+		exit(0);
+	}
+
+	debug("Writing %ld bytes to %s\n", filesize * sizeof(unsigned short int), filename);
+
+	fwrite(data, sizeof(unsigned short int), filesize, fp);
 	fclose(fp);
 
 	return;

@@ -25,7 +25,199 @@ int main (int argc, char** argv)
 	}
 
 	fp = fopen(outfile,"wb");
-
+	c = 'B';
+	n = 1;
+	for (i = 0; i < n; i++)
+	{
+		fwrite(&c,sizeof(char),1,fp);
+	}
+	c = 'A';
+	n = 1;
+	for (i = 0; i < n; i++)
+	{
+		fwrite(&c,sizeof(char),1,fp);
+	}
+	c = 'B';
+	n = 1;
+	for (i = 0; i < n; i++)
+	{
+		fwrite(&c,sizeof(char),1,fp);
+	}
+	c = 'A';
+	n = 2;
+	for (i = 0; i < n; i++)
+	{
+		fwrite(&c,sizeof(char),1,fp);
+	}
+	c = 'B';
+	n = 1;
+	for (i = 0; i < n; i++)
+	{
+		fwrite(&c,sizeof(char),1,fp);
+	}
+	c = 'A';
+	n = 3;
+	for (i = 0; i < n; i++)
+	{
+		fwrite(&c,sizeof(char),1,fp);
+	}
+	c = 'B';
+	n = 1;
+	for (i = 0; i < n; i++)
+	{
+		fwrite(&c,sizeof(char),1,fp);
+	}
+	c = 'A';
+	n = 2;
+	for (i = 0; i < n; i++)
+	{
+		fwrite(&c,sizeof(char),1,fp);
+	}
+	c = 'B';
+	n = 1;
+	for (i = 0; i < n; i++)
+	{
+		fwrite(&c,sizeof(char),1,fp);
+	}
+	c = 'A';
+	n = 2;
+	for (i = 0; i < n; i++)
+	{
+		fwrite(&c,sizeof(char),1,fp);
+	}
+	c = 'B';
+	n = 1;
+	for (i = 0; i < n; i++)
+	{
+		fwrite(&c,sizeof(char),1,fp);
+	}
+	c = 'A';
+	n = 2;
+	for (i = 0; i < n; i++)
+	{
+		fwrite(&c,sizeof(char),1,fp);
+	}
+	c = 'B';
+	n = 1;
+	for (i = 0; i < n; i++)
+	{
+		fwrite(&c,sizeof(char),1,fp);
+	}
+	c = 'A';
+	n = 2;
+	for (i = 0; i < n; i++)
+	{
+		fwrite(&c,sizeof(char),1,fp);
+	}
+	c = 'B';
+	n = 1;
+	for (i = 0; i < n; i++)
+	{
+		fwrite(&c,sizeof(char),1,fp);
+	}
+	c = 'A';
+	n = 2;
+	for (i = 0; i < n; i++)
+	{
+		fwrite(&c,sizeof(char),1,fp);
+	}
+	c = 'B';
+	n = 1;
+	for (i = 0; i < n; i++)
+	{
+		fwrite(&c,sizeof(char),1,fp);
+	}
+	c = 'A';
+	n = 2;
+	for (i = 0; i < n; i++)
+	{
+		fwrite(&c,sizeof(char),1,fp);
+	}
+	c = 'B';
+	n = 1;
+	for (i = 0; i < n; i++)
+	{
+		fwrite(&c,sizeof(char),1,fp);
+	}
+	c = 'A';
+	n = 2;
+	for (i = 0; i < n; i++)
+	{
+		fwrite(&c,sizeof(char),1,fp);
+	}
+	c = 'B';
+	n = 1;
+	for (i = 0; i < n; i++)
+	{
+		fwrite(&c,sizeof(char),1,fp);
+	}
+	c = 'A';
+	n = 2;
+	for (i = 0; i < n; i++)
+	{
+		fwrite(&c,sizeof(char),1,fp);
+	}
+	c = 'B';
+	n = 1;
+	for (i = 0; i < n; i++)
+	{
+		fwrite(&c,sizeof(char),1,fp);
+	}
+	c = 'A';
+	n = 2;
+	for (i = 0; i < n; i++)
+	{
+		fwrite(&c,sizeof(char),1,fp);
+	}
+	c = 'B';
+	n = 1;
+	for (i = 0; i < n; i++)
+	{
+		fwrite(&c,sizeof(char),1,fp);
+	}
+	c = 'A';
+	n = 2;
+	for (i = 0; i < n; i++)
+	{
+		fwrite(&c,sizeof(char),1,fp);
+	}
+	c = 'B';
+	n = 1;
+	for (i = 0; i < n; i++)
+	{
+		fwrite(&c,sizeof(char),1,fp);
+	}
+	c = 'A';
+	n = 2;
+	for (i = 0; i < n; i++)
+	{
+		fwrite(&c,sizeof(char),1,fp);
+	}
+	c = 'B';
+	n = 1;
+	for (i = 0; i < n; i++)
+	{
+		fwrite(&c,sizeof(char),1,fp);
+	}
+	c = 'A';
+	n = 2;
+	for (i = 0; i < n; i++)
+	{
+		fwrite(&c,sizeof(char),1,fp);
+	}
+	c = 'B';
+	n = 1;
+	for (i = 0; i < n; i++)
+	{
+		fwrite(&c,sizeof(char),1,fp);
+	}
+	c = 'A';
+	n = 2;
+	for (i = 0; i < n; i++)
+	{
+		fwrite(&c,sizeof(char),1,fp);
+	}
+/*
 	c = 'A';
 	n = 256;
 	for (i = 0; i < n; i++)
@@ -44,6 +236,7 @@ int main (int argc, char** argv)
 	{
 		fwrite(&w,sizeof(char),20,fp);
 	}
+	*/
 
 	fclose(fp);
 	return 0;
