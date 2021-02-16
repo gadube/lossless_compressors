@@ -11,7 +11,7 @@
 #define debug(fmt, ...)
 #endif
 
-#define ENTRIES 4096
+#define ENTRIES 65535
 
 #define TRUE 1
 #define FALSE 0
@@ -215,27 +215,33 @@ void lzw_a(unsigned char* data, unsigned short int **archive, long int filesize,
 		if (found)
 		{
 			array_replace(&(p.A),pc.A,&(p.len),pc.len);
-			//print_prev(p);
-			//print_prev(pc);
 		}
 		else
 		{
 			find_val(table, tablesize, p.A, p.len, &keyval);
 			(*archive)[j] = keyval; j++;
 			debug("%d ",keyval);
-			add_to_table(&table, pc, &tablesize);
+			char error = add_to_table(&table, pc, &tablesize);
+			if (error)
+			{
+				fprintf(stderr,"OH $#!^, YOUR TABLE GOT TOO BIG...\n");
+				destroy_table(&table, tablesize);
+				destroy_prev(&p);
+				destroy_prev(&pc);
+				exit(0);
+			}
 			p.len = 0;
 			array_replace(&(p.A), &c, &(p.len),1);
 			array_replace(&(pc.A),p.A,&(pc.len),p.len);
-			//print_prev(p);
-			//print_prev(pc);
 		}
+#ifndef DEBUG
+		if (i % 10 == 0) printf("\b\b\b\b\b%3ld %%",(i * 100) / filesize);
+#endif
 	}
+
 	find_val(table, tablesize, p.A, p.len, &keyval);
 	(*archive)[j] = keyval; j++;
-	*archivesize = j;
-	for (int i = 0; i < *archivesize; i++) printf("%d ", (*archive)[i]);
-	printf("\n");
+	*archivesize = j * 2;
 	print_table(table, 256, tablesize,tablesize);
 
 	destroy_table(&table, tablesize);
@@ -246,6 +252,45 @@ void lzw_a(unsigned char* data, unsigned short int **archive, long int filesize,
 
 void lzw_x(unsigned char** data, unsigned short int* archive, long int *filesize, long int archivesize)
 {
+	table_t* table = NULL;
+	prev_t x;
+	unsigned char y, z;
+	unsigned short int tablesize = 0;
+	unsigned short int p, c;
+
+	*data = (unsigned char *)malloc(archivesize * sizeof(unsigned char));
+	*filesize = 0;
+
+	init_table(&table, &tablesize);
+	init_prev(&x, 0);
+	c = archive[0];
+	arraychar_cat(data, table[c].val[0], (int *)filesize);
+
+	for (int i = 0; i < archivesize - 1; i++)
+	{
+		p = c;
+		c = archive[i + 1];
+		if (c < tablesize)
+		{
+			array_cat(data, table[c].val, (int *) filesize, table[c].sym_length);
+			array_replace(&(x.A), table[p].val, &(x.len), table[p].sym_length);
+			y = table[c].val[0];
+			arraychar_cat(&(x.A), y, &(x.len));
+			add_to_table(&table, x, &tablesize);
+		}
+		else
+		{
+			array_replace(&(x.A), table[p].val, &(x.len), table[p].sym_length);
+			z = table[p].val[0];
+			arraychar_cat(&(x.A), z, &(x.len));
+			array_cat(data, x.A, (int *) filesize, x.len);
+			add_to_table(&table, x, &tablesize);
+		}
+#ifndef DEBUG
+		if (i % 10 == 0) printf("\b\b\b\b\b%3ld %%",(i * 100) / archivesize);
+#endif
+	}
+	print_table(table, 256, tablesize,tablesize);
 
 	return;
 }
@@ -270,7 +315,8 @@ void decompress(char* file)
 	if (strstr(file, ".a") != NULL)
 	{
 		len = strlen(outfile);
-		strcpy(&outfile[len - 2],&outfile[2 + len - 2]); //get rid of archive extension
+		//strcpy(&outfile[len - 2],&outfile[2 + len - 2]); //get rid of archive extension
+		outfile[len - 1] = 'u';
 	}
 
 	write_file(outfile, data, filesize);
@@ -278,7 +324,7 @@ void decompress(char* file)
 	free(archive);
 	free(data);
 
-	print_stats(file, outfile, filesize, archivesize);
+	print_stats(file, outfile, filesize, archivesize * 2);
 
 	return;
 }
@@ -301,7 +347,7 @@ void compress(char* file)
 	strcpy(outfile,file);
 	strcat(outfile,".a");
 
-//	write_file(outfile, archive, archivesize);
+	//write_file(outfile, archive, archivesize);
 	write_lzw_file(outfile, archive, archivesize);
 
 	free(data);
@@ -317,8 +363,8 @@ void print_stats(char* infile, char* outfile, long int filesize, long int archiv
 	printf("\nOriginal file: \t\t%s\n", infile);
 	printf("Compressed file: \t%s\n", outfile);
 	printf("Original size: \t\t%ld\n", filesize);
-	printf("Compressed size: \t%ld\n", archivesize * sizeof(unsigned short int));
-	printf("Compression ratio: \t%0.4f\n", (float)filesize/(archivesize* sizeof(unsigned short int)));
+	printf("Compressed size: \t%ld\n", archivesize);
+	printf("Compression ratio: \t%0.4f\n", (float)filesize/archivesize);
 
 	return;
 }
@@ -368,8 +414,9 @@ void read_lzw_file(char* filename, unsigned short int** data, long int *filesize
 	debug("Reading %ld bytes from %s\n", *filesize, filename);
 
 	// read data
-	*data = (unsigned short int *)malloc((*filesize) * sizeof(unsigned short int));
-	fread(*data, sizeof(unsigned short int), *filesize, fp);
+	*data = (unsigned short int *)malloc((*filesize));
+	fread(*data, 1, *filesize, fp);
+	*filesize = (*filesize) / 2;
 	fclose(fp);
 
 	return;
@@ -407,7 +454,7 @@ void write_lzw_file(char* filename, unsigned short int* data, long int filesize)
 
 	debug("Writing %ld bytes to %s\n", filesize * sizeof(unsigned short int), filename);
 
-	fwrite(data, sizeof(unsigned short int), filesize, fp);
+	fwrite(data, sizeof(unsigned char), filesize, fp);
 	fclose(fp);
 
 	return;
