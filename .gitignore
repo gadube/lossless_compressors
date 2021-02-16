@@ -58,4 +58,5 @@ dkms.conf
 # input/output files
 *.bin
 *.a
+*.u
 *.ppm
