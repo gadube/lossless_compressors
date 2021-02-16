@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-Wall -g -DDEBUG
+CFLAGS=-Wall -g #-DDEBUG
 LDFLAGS=
 
 all:
@@ -20,3 +20,4 @@ clean:
 	rm -rf lzw
 	rm -rf *.bin
 	rm -rf *.a
+	rm -rf *.u
