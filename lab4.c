@@ -36,9 +36,11 @@ void print_frequency_nodes(node_t **frequency_list, int unique);
 void parse_input(int argc, char** argv, char* filename, char* compress, char* decompress);
 void read_file(char* filename, unsigned char** data, long int *filesize);
 void write_file(char* filename, unsigned char* data, long int filesize);
-void huffman_a(unsigned char* data, unsigned char **archive, long int filesize, long int *archivesize);
-void huffman_x(unsigned char** data, unsigned char* archive, long int *filesize, long int archivesize);
-void print_stats(char* infile, char* outfile, long int filesize, long int archivesize);
+void write_huffman_file(char* filename, unsigned int* data, long int filesize);
+void huffman_a(unsigned char* data, unsigned int **archive, long int filesize, long int *archivesize);
+void huffman_x(unsigned char** data, unsigned int* archive, long int *filesize, long int archivesize);
+void print_compress_stats(char* infile, char* outfile, long int filesize, long int archivesize);
+void print_decompress_stats(char* infile, char* outfile, long int filesize, long int archivesize);
 void compress(char* file);
 void decompress(char* file);
 
@@ -57,17 +59,18 @@ int main (int argc, char** argv)
 
 void decompress(char* file)
 {
-	unsigned char* data, *archive;
+	unsigned int* archive;
+	unsigned char* data;
 	long int filesize, archivesize;
 	int len;
 	char outfile[80];
 
-	read_file(file, &archive, &archivesize);
+//	read_huffman_file(file, &archive, &archivesize);
 
 	// compress with RLE
 	printf("Decompressing file... %s\n", file);
 
-	huffman_x(&data, archive, &filesize, archivesize);
+//	huffman_x(&data, archive, &filesize, archivesize);
 
 	// append file with *.a file extension
 	strcpy(outfile,file);
@@ -77,19 +80,20 @@ void decompress(char* file)
 		strcpy(&outfile[len - 2],&outfile[2 + len - 2]); //get rid of archive extension
 	}
 
-	write_file(outfile, data, filesize);
+	//write_file(outfile, data, filesize);
 
 	free(archive);
 	free(data);
 
-	print_stats(file, outfile, filesize, archivesize);
+	print_decompress_stats(file, outfile, filesize, archivesize);
 
 	return;
 }
 
 void compress(char* file)
 {
-	unsigned char* data, *archive;
+	unsigned char* data;
+	unsigned int* archive;
 	long int filesize, archivesize;
 	char outfile[80];
 
@@ -104,27 +108,36 @@ void compress(char* file)
 	strcpy(outfile,file);
 	strcat(outfile,".a");
 
-//	write_file(outfile, archive, archivesize);
+	write_huffman_file(outfile, archive, archivesize);
 
-//	free(data);
-//	free(archive);
+	free(data);
+	free(archive);
 
-//	print_stats(file, outfile, filesize, archivesize);
+	print_compress_stats(file, outfile, filesize, archivesize);
+
+	return;
+}
+void print_decompress_stats(char* infile, char* outfile, long int filesize, long int archivesize)
+{
+	printf("\nOriginal file: \t\t%s\n", infile);
+	printf("Decompressed file: \t%s\n", outfile);
+	printf("Original size: \t\t%ld\n", filesize);
+	printf("Compressed size: \t%ld\n", archivesize * 4);
+	printf("Compression ratio: \t%0.4f\n", (float)filesize/(archivesize * 4));
 
 	return;
 }
 
-void print_stats(char* infile, char* outfile, long int filesize, long int archivesize)
+void print_compress_stats(char* infile, char* outfile, long int filesize, long int archivesize)
 {
 	printf("\nOriginal file: \t\t%s\n", infile);
 	printf("Compressed file: \t%s\n", outfile);
 	printf("Original size: \t\t%ld\n", filesize);
-	printf("Compressed size: \t%ld\n", archivesize);
-	printf("Compression ratio: \t%0.4f\n", (float)filesize/archivesize);
+	printf("Compressed size: \t%ld\n", archivesize * 4);
+	printf("Compression ratio: \t%0.4f\n", (float)filesize/(archivesize * 4));
 
 	return;
 }
-
 void read_file(char* filename, unsigned char** data, long int *filesize)
 {
 	FILE* fp = NULL;
@@ -146,6 +159,25 @@ void read_file(char* filename, unsigned char** data, long int *filesize)
 	// read data
 	*data = (unsigned char *)malloc((*filesize) * sizeof(unsigned char));
 	fread(*data, sizeof(unsigned char), *filesize, fp);
+	fclose(fp);
+
+	return;
+}
+
+void write_huffman_file(char* filename, unsigned int* data, long int filesize)
+{
+	FILE* fp = NULL;
+
+	fp = fopen(filename, "wb");
+	if (fp == NULL)
+	{
+		printf("Unable to open file %s\n", filename);
+		exit(0);
+	}
+
+	debug("Writing %ld bytes to %s\n", filesize * 4, filename);
+
+	fwrite(data, sizeof(unsigned int), filesize, fp);
 	fclose(fp);
 
 	return;
@@ -526,12 +558,40 @@ code_t* get_codes(tree_t* T, unsigned int* freq, int n, int depth)
 	return C;
 }
 
-void huffman_a(unsigned char* data, unsigned char **archive, long int filesize, long int *archivesize)
+void dumpbits(unsigned int **array, long int *size, unsigned int *bitstring, int *bits)
+{
+	unsigned int *tmp = (unsigned int *)calloc(sizeof(unsigned int), *size + 1);
+	for (int i = 0 ; i < *size; i++) tmp[i] = (*array)[i];
+	free(*array);
+	*array = tmp;
+	tmp = NULL;
+
+	(*array)[*size] = *bitstring;
+	(*size)++;
+	*bitstring = 0;
+	*bits = 0;
+	return;
+}
+
+code_t find_code(code_t *codelist, int num_codes, unsigned char symbol)
+{
+	for (int i = 0 ; i < num_codes; i++)
+	{
+		if (symbol == codelist[i].symbol) return codelist[i];
+	}
+	printf("ERROR: SYMBOL %u NOT FOUND! OH NOOOOOOOOOO...\n", symbol);
+	exit(0);
+}
+
+void huffman_a(unsigned char* data, unsigned int **archive, long int filesize, long int *archivesize)
 {
 	tree_t* huff_tree;
 	unsigned int *frequencies = (unsigned int *)calloc(sizeof(unsigned int), 256);
 	int num_nodes = 0;
 	int max_sym_len;
+	int bits = 0;
+	code_t code;
+	unsigned int bitstring = 0;
 	num_nodes = find_frequency(data, filesize, &frequencies);
 
 	//create huffman tree
@@ -543,12 +603,36 @@ void huffman_a(unsigned char* data, unsigned char **archive, long int filesize, 
 	//generate list of codes
 	code_t *codelist = get_codes(huff_tree, frequencies, num_nodes, max_sym_len);
 
+	//allocate space for archive
+	*archive = (unsigned int*)malloc(sizeof(unsigned int) * (num_nodes * 2 + 1));
+	*archivesize = 0;
+	(*archive)[0] = filesize;
+	(*archivesize)++;
+	for (int i = 0; i < 256; i++)
+	{
+		if (frequencies[i] == 0) continue;
+		(*archive)[*archivesize] = i;
+		(*archivesize)++;
+		(*archive)[*archivesize] = frequencies[i];
+		(*archivesize)++;
+	}
+
+	for (int i = 0; i < filesize; i++)
+	{
+		code = find_code(codelist, num_nodes, data[i]);
+		for (int j = 0; j < code.len; j++, bits++)
+		{
+			if (bits == 32) dumpbits(archive, archivesize, &bitstring, &bits);
+			bitstring |= (code.bstring[j] << bits);
+		}
+	}
+	dumpbits(archive, archivesize, &bitstring, &bits);
 
 	free(frequencies);
 	return;
 }
 
-void huffman_x(unsigned char** data, unsigned char* archive, long int *filesize, long int archivesize)
+void huffman_x(unsigned char** data, unsigned int* archive, long int *filesize, long int archivesize)
 {
 	return;
 }
