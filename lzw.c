@@ -494,3 +494,4 @@ void parse_input(int argc, char** argv, char* filename, char* compress, char* de
 
 	return;
 }
+
